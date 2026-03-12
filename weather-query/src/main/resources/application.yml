@@ -1,0 +1,12 @@
+server:
+  port: 16000
+
+spring:
+  application:
+    name: weather-query
+
+weather:
+  qweather:
+    api-key: YOUR_API_KEY
+    base-url: https://devapi.qweather.com/v7
+    geo-url: https://geoapi.qweather.com/v2
