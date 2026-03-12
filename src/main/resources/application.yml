@@ -1,0 +1,16 @@
+server:
+  port: 16234
+
+spring:
+  application:
+    name: weather-tool
+
+# 高德地图API配置
+weather:
+  amap:
+    # 高德天气API Key（请替换为你自己的Key）
+    key: your-amap-key-here
+    # 天气查询API地址
+    weather-url: https://restapi.amap.com/v3/weather/weatherInfo
+    # 地理编码API地址
+    geocode-url: https://restapi.amap.com/v3/geocode/regeo
