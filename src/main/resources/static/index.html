@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>天气查询工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        .form-group { margin: 15px 0; }
+        select, input { padding: 8px; width: 200px; margin-right: 10px; }
+        button { padding: 8px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .result { margin-top: 20px; padding: 15px; background: white; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h2>天气查询小工具</h2>
+    <div class="container">
+        <h3>按城市选择查询</h3>
+        <div class="form-group">
+            <select id="province" onchange="loadCities()">
+                <option value="">请选择省份</option>
+            </select>
+            <select id="city" onchange="loadCounties()">
+                <option value="">请选择城市</option>
+            </select>
+            <select id="county">
+                <option value="">请选择区县</option>
+            </select>
+            <button onclick="queryByCity()">查询天气</button>
+        </div>
+
+        <h3>按经纬度查询</h3>
+        <div class="form-group">
+            <input type="text" id="lon" placeholder="经度" value="113.35">
+            <input type="text" id="lat" placeholder="纬度" value="23.13">
+            <button onclick="queryByLocation()">查询天气</button>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            loadProvinces();
+        }
+
+        function loadProvinces() {
+            fetch('/api/weather/provinces')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('province');
+                    select.innerHTML = '<option value="">请选择省份</option>';
+                    data.data.forEach(p => {
+                        select.innerHTML += `<option value="${p.code}">${p.name}</option>`;
+                    });
+                });
+        }
+
+        function loadCities() {
+            const code = document.getElementById('province').value;
+            if (!code) return;
+            fetch(`/api/weather/cities?parentCode=${code}`)
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('city');
+                    select.innerHTML = '<option value="">请选择城市</option>';
+                    document.getElementById('county').innerHTML = '<option value="">请选择区县</option>';
+                    data.data.forEach(c => {
+                        select.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+                    });
+                });
+        }
+
+        function loadCounties() {
+            const code = document.getElementById('city').value;
+            if (!code) return;
+            fetch(`/api/weather/counties?parentCode=${code}`)
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('county');
+                    select.innerHTML = '<option value="">请选择区县</option>';
+                    data.data.forEach(c => {
+                        select.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+                    });
+                });
+        }
+
+        function queryByCity() {
+            const county = document.getElementById('county');
+            const city = document.getElementById('city');
+            const province = document.getElementById('province');
+            
+            let name = county.options[county.selectedIndex].text;
+            if (name === '请选择区县') {
+                name = city.options[city.selectedIndex].text;
+            }
+            if (name === '请选择城市') {
+                name = province.options[province.selectedIndex].text;
+            }
+            
+            fetch(`/api/weather/byCity?cityName=${encodeURIComponent(name)}`)
+                .then(res => res.json())
+                .then(showResult);
+        }
+
+        function queryByLocation() {
+            const lon = document.getElementById('lon').value;
+            const lat = document.getElementById('lat').value;
+            fetch(`/api/weather/byLocation?lon=${lon}&lat=${lat}`)
+                .then(res => res.json())
+                .then(showResult);
+        }
+
+        function showResult(data) {
+            if (data.code === 200) {
+                document.getElementById('result').innerHTML = `
+                    <h3>天气查询结果</h3>
+                    <p>城市：${data.data.city}</p>
+                    <p>天气：${data.data.weather}</p>
+                    <p>温度：${data.data.temperature}℃</p>
+                    <p>湿度：${data.data.humidity}%</p>
+                    <p>风速：${data.data.windSpeed}km/h</p>
+                    <p>更新时间：${data.data.updateTime}</p>
+                `;
+            } else {
+                document.getElementById('result').innerHTML = `<p style="color:red">${data.msg}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
